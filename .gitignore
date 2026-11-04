@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Machine Learning models
+models/*.pkl
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
