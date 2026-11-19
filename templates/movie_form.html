@@ -10,7 +10,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label text-light">Genres (Comma separated) *</label>
-                <input type="text" name="genres" class="form-control bg-dark text-light border-secondary" placeholder="e.g. Action, Adventure, Sci-Fi" value="{{ movie.genres_display or (movie.genres|join(', ') if movie.genres else '') }}" required>
+                <input type="text" name="genres" class="form-control bg-dark text-light border-secondary" placeholder="e.g. Action, Adventure, Sci-Fi" value="{{ movie.genres_display if movie.genres_display is defined else (movie.genres|join(', ') if movie.genres is iterable and movie.genres is not string else (movie.genres or '')) }}" required>
             </div>
             <div class="mb-3">
                 <label class="form-label text-light">Release Date</label>

@@ -26,7 +26,7 @@
                     </div>
                     <p class="card-text text-secondary small flex-grow-1">{{ m.overview[:110] }}...</p>
                     <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-secondary">
-                        <span class="text-warning"><i class="bi bi-star-fill"></i> {{ "%.1f"|format(m.vote_average) }}</span>
+                        <span class="text-warning"><i class="bi bi-star-fill"></i> {{ "%.1f"|format(m.vote_average or 0) }}</span>
                         <a href="{{ url_for('movie_detail', movie_id=m.movie_id) }}" class="btn btn-sm btn-outline-light">Details</a>
                     </div>
                 </div>

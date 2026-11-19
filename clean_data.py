@@ -12,7 +12,7 @@ def parse_genres(genres_raw):
     try:
         parsed = ast.literal_eval(genres_raw) if isinstance(genres_raw, str) else genres_raw
         if isinstance(parsed, list):
-            genre_names = [item["name"] for item in parsed if isinstance(item, dict) and "name" in item]
+            genre_names = [str(item["name"]).strip() for item in parsed if isinstance(item, dict) and "name" in item and str(item["name"]).strip()]
             return genre_names if genre_names else ["Unknown"]
     except Exception:
         pass
@@ -38,13 +38,16 @@ def clean_tmdb_movies(input_path=RAW_DATA_PATH, output_path=CLEAN_DATA_PATH):
     df["genres_clean"] = df["genres_list"].apply(json.dumps)
 
     # 4. Handle missing values
-    df["title"] = df["title"].fillna("Untitled").str.strip()
-    df["overview"] = df["overview"].fillna("No overview available.").str.strip()
-    df["release_date"] = df["release_date"].fillna("N/A")
+    df["title"] = df["title"].fillna("Untitled").astype(str).str.strip()
+    df["title"] = df["title"].replace("", "Untitled")
+    df["overview"] = df["overview"].fillna("No overview available.").astype(str).str.strip()
+    df["overview"] = df["overview"].replace("", "No overview available.")
+    df["release_date"] = df["release_date"].fillna("N/A").astype(str).str.strip()
     df["vote_average"] = pd.to_numeric(df["vote_average"], errors="coerce").fillna(0.0)
     df["vote_count"] = pd.to_numeric(df["vote_count"], errors="coerce").fillna(0).astype(int)
     df["popularity"] = pd.to_numeric(df["popularity"], errors="coerce").fillna(0.0)
 
+    df["id"] = pd.to_numeric(df["id"], errors="coerce")
     df = df.dropna(subset=["id", "title"])
     df["id"] = df["id"].astype(int)
 

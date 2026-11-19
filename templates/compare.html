@@ -1,0 +1,431 @@
+{% extends 'base.html' %}
+{% block title %}Movie Face-Off - Compare Movies | CineScope{% endblock %}
+{% block content %}
+<section class="py-5 bg-gradient border-bottom border-secondary" style="background: radial-gradient(circle at center, #23121d 0%, #0d0f12 75%);">
+    <div class="container text-center">
+        <span class="badge bg-danger bg-opacity-25 text-danger px-3 py-2 rounded-pill mb-3 fw-bold">
+            <i class="bi bi-arrow-left-right"></i> Head-to-Head Comparison
+        </span>
+        <h1 class="display-4 fw-bold text-white mb-2">Movie Face-Off</h1>
+        <p class="lead text-secondary mx-auto" style="max-width: 680px;">
+            Select any two movies to compare their ratings, audience reception, popularity, common genres, and storylines side by side.
+        </p>
+
+        <!-- Searchable Selection Form -->
+        <div class="card bg-black bg-opacity-75 border-secondary p-4 mt-4 mx-auto text-start" style="max-width: 960px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
+            <form method="GET" action="{{ url_for('compare_movies') }}" id="compareForm">
+                <div class="row g-3 align-items-center">
+                    <!-- Movie 1 Input (Red Corner) -->
+                    <div class="col-md-5">
+                        <label class="form-label text-danger fw-bold small mb-1">
+                            <i class="bi bi-film"></i> Movie 1 (Corner Red)
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-danger"><i class="bi bi-1-circle-fill"></i></span>
+                            <input type="text" 
+                                   name="movie1" 
+                                   id="movie1Input"
+                                   class="form-control bg-dark text-light border-secondary" 
+                                   list="moviesList" 
+                                   placeholder="Search first movie..." 
+                                   value="{{ movie1.title if movie1 else movie1_query }}"
+                                   autocomplete="off"
+                                   required>
+                        </div>
+                    </div>
+
+                    <!-- VS / Swap Buttons -->
+                    <div class="col-md-2 text-center d-flex flex-column align-items-center justify-content-center pt-md-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm mb-1 px-3" id="swapBtn" title="Swap Movies">
+                            <i class="bi bi-arrow-left-right"></i> Swap
+                        </button>
+                    </div>
+
+                    <!-- Movie 2 Input (Blue Corner) -->
+                    <div class="col-md-5">
+                        <label class="form-label text-info fw-bold small mb-1">
+                            <i class="bi bi-film"></i> Movie 2 (Corner Blue)
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-info"><i class="bi bi-2-circle-fill"></i></span>
+                            <input type="text" 
+                                   name="movie2" 
+                                   id="movie2Input"
+                                   class="form-control bg-dark text-light border-secondary" 
+                                   list="moviesList" 
+                                   placeholder="Search second movie..." 
+                                   value="{{ movie2.title if movie2 else movie2_query }}"
+                                   autocomplete="off"
+                                   required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top border-secondary gap-2">
+                    <!-- Preset Suggestions -->
+                    <div class="d-flex flex-wrap align-items-center gap-1 small text-secondary">
+                        <span class="me-1">Quick match:</span>
+                        <a href="{{ url_for('compare_movies', movie1='Avatar', movie2='Interstellar') }}" class="badge bg-secondary text-decoration-none">Avatar vs Interstellar</a>
+                        <a href="{{ url_for('compare_movies', movie1='The Dark Knight', movie2='Inception') }}" class="badge bg-secondary text-decoration-none">Dark Knight vs Inception</a>
+                        <a href="{{ url_for('compare_movies', movie1='Titanic', movie2='Forrest Gump') }}" class="badge bg-secondary text-decoration-none">Titanic vs Forrest Gump</a>
+                    </div>
+
+                    <!-- Action Controls -->
+                    <div class="d-flex gap-2 ms-auto">
+                        <a href="{{ url_for('compare_movies') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x-circle"></i> Reset
+                        </a>
+                        <button type="submit" class="btn btn-danger btn-sm px-4 fw-bold">
+                            <i class="bi bi-lightning-fill"></i> Compare Now
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Datalist for fast searchable autocomplete -->
+                <datalist id="moviesList">
+                    {% for m in all_movies %}
+                    <option value="{{ m.title }} (ID: {{ m.movie_id }})">{{ m.title }} ({{ m.release_date[:4] if m.release_date else 'N/A' }})</option>
+                    {% endfor %}
+                </datalist>
+            </form>
+        </div>
+    </div>
+</section>
+
+<div class="container my-5">
+    <!-- STATE 1: INITIAL STATE -->
+    {% if state == 'initial' %}
+    <div class="card bg-secondary bg-opacity-10 border-secondary p-5 text-center my-4" style="border-radius: 16px;">
+        <div class="display-3 text-danger mb-3">
+            <i class="bi bi-film"></i>
+        </div>
+        <h3 class="fw-bold text-white mb-2">Ready for the Movie Face-Off?</h3>
+        <p class="text-secondary mx-auto mb-4" style="max-width: 580px;">
+            Choose any two movies from the fields above or click one of the quick match suggestions to launch a comprehensive head-to-head analysis.
+        </p>
+        <div class="row row-cols-1 row-cols-md-3 g-3 text-start mx-auto" style="max-width: 820px;">
+            <div class="col">
+                <div class="p-3 rounded bg-dark border border-secondary h-100">
+                    <div class="text-warning fs-4 mb-2"><i class="bi bi-tags-fill"></i></div>
+                    <h6 class="text-white fw-bold mb-1">Common Genres</h6>
+                    <p class="text-secondary small mb-0">Instantly detects shared genres to highlight thematic crossover between movies.</p>
+                </div>
+            </div>
+            <div class="col">
+                <div class="p-3 rounded bg-dark border border-secondary h-100">
+                    <div class="text-success fs-4 mb-2"><i class="bi bi-award-fill"></i></div>
+                    <h6 class="text-white fw-bold mb-1">Objective Metrics</h6>
+                    <p class="text-secondary small mb-0">Compares TMDB average rating, total votes, and global popularity with clear indicators.</p>
+                </div>
+            </div>
+            <div class="col">
+                <div class="p-3 rounded bg-dark border border-secondary h-100">
+                    <div class="text-info fs-4 mb-2"><i class="bi bi-journal-text"></i></div>
+                    <h6 class="text-white fw-bold mb-1">Storyline Face-Off</h6>
+                    <p class="text-secondary small mb-0">Read synopsis overviews side by side to see how different narratives unfold.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATE 2: INCOMPLETE STATE (Only 1 movie chosen) -->
+    {% elif state == 'incomplete' %}
+    <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+        <div>
+            <strong>Almost there!</strong> 
+            {% if movie1 and not movie2 %}
+                You have selected <strong>{{ movie1.title }}</strong>. Please select the second movie above to start comparing.
+            {% elif movie2 and not movie1 %}
+                You have selected <strong>{{ movie2.title }}</strong>. Please select the first movie above to start comparing.
+            {% else %}
+                Please select both movies to launch the head-to-head face-off.
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4 align-items-stretch">
+        <!-- Movie 1 Slot -->
+        <div class="col-md-6">
+            {% if movie1 %}
+            <div class="card h-100 bg-secondary bg-opacity-10 border-danger border-2 p-3">
+                <span class="badge bg-danger align-self-start mb-2 px-2 py-1"><i class="bi bi-check-circle-fill"></i> Movie 1 Selected</span>
+                <div class="compare-poster-container mb-3">
+                    <img src="{{ movie1.poster_url }}" alt="{{ movie1.title }}" class="compare-poster-img rounded">
+                </div>
+                <h4 class="fw-bold text-white mb-1">{{ movie1.title }}</h4>
+                <div class="text-warning mb-2"><i class="bi bi-star-fill"></i> {{ "%.1f"|format(movie1.vote_average or 0) }} / 10</div>
+                <p class="text-secondary small">{{ movie1.overview[:140] }}...</p>
+            </div>
+            {% else %}
+            <div class="card h-100 bg-black bg-opacity-25 border-secondary border-dashed p-5 text-center d-flex flex-column align-items-center justify-content-center" style="border-style: dashed; min-height: 420px;">
+                <i class="bi bi-plus-circle text-danger display-3 mb-3"></i>
+                <h5 class="text-light fw-bold">Select Movie 1</h5>
+                <p class="text-secondary small">Use the search box above to choose the first competitor.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Movie 2 Slot -->
+        <div class="col-md-6">
+            {% if movie2 %}
+            <div class="card h-100 bg-secondary bg-opacity-10 border-info border-2 p-3">
+                <span class="badge bg-info text-dark align-self-start mb-2 px-2 py-1"><i class="bi bi-check-circle-fill"></i> Movie 2 Selected</span>
+                <div class="compare-poster-container mb-3">
+                    <img src="{{ movie2.poster_url }}" alt="{{ movie2.title }}" class="compare-poster-img rounded">
+                </div>
+                <h4 class="fw-bold text-white mb-1">{{ movie2.title }}</h4>
+                <div class="text-warning mb-2"><i class="bi bi-star-fill"></i> {{ "%.1f"|format(movie2.vote_average or 0) }} / 10</div>
+                <p class="text-secondary small">{{ movie2.overview[:140] }}...</p>
+            </div>
+            {% else %}
+            <div class="card h-100 bg-black bg-opacity-25 border-secondary border-dashed p-5 text-center d-flex flex-column align-items-center justify-content-center" style="border-style: dashed; min-height: 420px;">
+                <i class="bi bi-plus-circle text-info display-3 mb-3"></i>
+                <h5 class="text-light fw-bold">Select Movie 2</h5>
+                <p class="text-secondary small">Use the search box above to choose the second competitor.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- STATE 3: COMPARISON STATE (Both movies selected) -->
+    {% elif state == 'comparison' %}
+
+    <!-- Metric Breakdown & Highlights -->
+    <div class="card bg-black bg-opacity-50 border-secondary p-4 mb-5" style="border-radius: 14px;">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 border-bottom border-secondary pb-3">
+            <div>
+                <h4 class="fw-bold text-white mb-1"><i class="bi bi-speedometer2 text-danger"></i> Metric Showdown</h4>
+                <p class="text-secondary small mb-0">Direct comparison across TMDB rating, audience volume, and popularity.</p>
+            </div>
+            <div>
+                {% if comparison.common_genres %}
+                <span class="badge bg-warning text-dark px-3 py-2 fs-6">
+                    <i class="bi bi-link-45deg"></i> {{ comparison.common_genres|length }} Shared Genre{% if comparison.common_genres|length > 1 %}s{% endif %}:
+                    <strong>{{ comparison.common_genres|join(', ') }}</strong>
+                </span>
+                {% else %}
+                <span class="badge bg-secondary px-3 py-2 fs-6">
+                    <i class="bi bi-slash-circle"></i> No Common Genres
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Metric Table Comparison -->
+        <div class="table-responsive">
+            <table class="table table-dark table-borderless align-middle mb-0 text-center">
+                <thead>
+                    <tr class="border-bottom border-secondary text-secondary small text-uppercase">
+                        <th class="text-start text-danger" style="width: 40%;"><i class="bi bi-1-circle-fill"></i> {{ movie1.title }}</th>
+                        <th style="width: 20%;">Metric</th>
+                        <th class="text-end text-info" style="width: 40%;">{{ movie2.title }} <i class="bi bi-2-circle-fill"></i></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rating Row -->
+                    <tr>
+                        <td class="text-start">
+                            <div class="metric-box {% if comparison.rating_cmp == 'm1' %}leader{% elif comparison.rating_cmp == 'tie' %}tie{% endif %}">
+                                <span class="fs-4 fw-bold text-warning"><i class="bi bi-star-fill"></i> {{ "%.1f"|format(movie1.vote_average or 0) }}</span>
+                                <span class="text-secondary small"> / 10</span>
+                                {% if comparison.rating_cmp == 'm1' %}
+                                    <span class="badge bg-success ms-2"><i class="bi bi-trophy-fill"></i> Higher (+{{ comparison.diff_rating }})</span>
+                                {% elif comparison.rating_cmp == 'tie' %}
+                                    <span class="badge bg-secondary ms-2">Tie</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="fw-bold text-light">TMDB Rating</td>
+                        <td class="text-end">
+                            <div class="metric-box {% if comparison.rating_cmp == 'm2' %}leader{% elif comparison.rating_cmp == 'tie' %}tie{% endif %}">
+                                {% if comparison.rating_cmp == 'm2' %}
+                                    <span class="badge bg-success me-2"><i class="bi bi-trophy-fill"></i> Higher (+{{ comparison.diff_rating }})</span>
+                                {% elif comparison.rating_cmp == 'tie' %}
+                                    <span class="badge bg-secondary me-2">Tie</span>
+                                {% endif %}
+                                <span class="fs-4 fw-bold text-warning"><i class="bi bi-star-fill"></i> {{ "%.1f"|format(movie2.vote_average or 0) }}</span>
+                                <span class="text-secondary small"> / 10</span>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Popularity Row -->
+                    <tr>
+                        <td class="text-start">
+                            <div class="metric-box {% if comparison.pop_cmp == 'm1' %}leader{% elif comparison.pop_cmp == 'tie' %}tie{% endif %}">
+                                <span class="fs-5 fw-bold text-light">{{ "%.1f"|format(movie1.popularity or 0) }}</span>
+                                {% if comparison.pop_cmp == 'm1' %}
+                                    <span class="badge bg-info text-dark ms-2"><i class="bi bi-fire"></i> More Popular (+{{ comparison.diff_pop }})</span>
+                                {% elif comparison.pop_cmp == 'tie' %}
+                                    <span class="badge bg-secondary ms-2">Tie</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="fw-bold text-light">Popularity</td>
+                        <td class="text-end">
+                            <div class="metric-box {% if comparison.pop_cmp == 'm2' %}leader{% elif comparison.pop_cmp == 'tie' %}tie{% endif %}">
+                                {% if comparison.pop_cmp == 'm2' %}
+                                    <span class="badge bg-info text-dark me-2"><i class="bi bi-fire"></i> More Popular (+{{ comparison.diff_pop }})</span>
+                                {% elif comparison.pop_cmp == 'tie' %}
+                                    <span class="badge bg-secondary me-2">Tie</span>
+                                {% endif %}
+                                <span class="fs-5 fw-bold text-light">{{ "%.1f"|format(movie2.popularity or 0) }}</span>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Vote Count Row -->
+                    <tr>
+                        <td class="text-start">
+                            <div class="metric-box {% if comparison.votes_cmp == 'm1' %}leader{% elif comparison.votes_cmp == 'tie' %}tie{% endif %}">
+                                <span class="fs-5 fw-bold text-light">{{ movie1.vote_count }}</span>
+                                <span class="text-secondary small"> votes</span>
+                                {% if comparison.votes_cmp == 'm1' %}
+                                    <span class="badge bg-primary ms-2"><i class="bi bi-people-fill"></i> Higher Volume</span>
+                                {% elif comparison.votes_cmp == 'tie' %}
+                                    <span class="badge bg-secondary ms-2">Tie</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="fw-bold text-light">Vote Count</td>
+                        <td class="text-end">
+                            <div class="metric-box {% if comparison.votes_cmp == 'm2' %}leader{% elif comparison.votes_cmp == 'tie' %}tie{% endif %}">
+                                {% if comparison.votes_cmp == 'm2' %}
+                                    <span class="badge bg-primary me-2"><i class="bi bi-people-fill"></i> Higher Volume</span>
+                                {% elif comparison.votes_cmp == 'tie' %}
+                                    <span class="badge bg-secondary me-2">Tie</span>
+                                {% endif %}
+                                <span class="fs-5 fw-bold text-light">{{ movie2.vote_count }}</span>
+                                <span class="text-secondary small"> votes</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Balanced Evaluation Notice (Requirement 5) -->
+        <div class="text-center small text-secondary mt-3 pt-2 border-top border-secondary">
+            <i class="bi bi-info-circle me-1"></i> Metric highlights indicate audience and rating trends independently. CineScope provides objective comparison without declaring an absolute singular winner.
+        </div>
+    </div>
+
+    <!-- Side-by-Side Detailed Movie Cards -->
+    <div class="row g-4 position-relative">
+        <!-- Movie 1 Card (Red Corner) -->
+        <div class="col-lg-6">
+            <div class="card h-100 bg-secondary bg-opacity-10 border-danger border-2 overflow-hidden shadow-lg">
+                <div class="card-header bg-danger bg-opacity-10 border-danger d-flex justify-content-between align-items-center py-3">
+                    <span class="fw-bold text-danger"><i class="bi bi-1-circle-fill me-1"></i> CORNER RED</span>
+                    <span class="badge bg-danger">{{ movie1.release_date[:4] if movie1.release_date else 'N/A' }}</span>
+                </div>
+
+                <div class="p-3">
+                    <div class="compare-poster-container mb-3">
+                        <img src="{{ movie1.poster_url }}" alt="{{ movie1.title }} Poster" class="compare-poster-img">
+                    </div>
+
+                    <h3 class="fw-bold text-white mb-2">{{ movie1.title }}</h3>
+
+                    <!-- Genres with Common Genres Highlighted -->
+                    <div class="mb-3">
+                        <div class="small text-secondary mb-1">Genres:</div>
+                        {% for g in movie1.genres %}
+                            {% if g in comparison.common_genres %}
+                                <span class="badge bg-warning text-dark me-1 mb-1 border border-light">
+                                    <i class="bi bi-check-circle-fill"></i> {{ g }} (Shared)
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary me-1 mb-1">{{ g }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <!-- Overview -->
+                    <div class="mb-4">
+                        <h6 class="text-light fw-bold mb-1">Storyline Overview</h6>
+                        <p class="text-secondary small leading-relaxed">{{ movie1.overview }}</p>
+                    </div>
+
+                    <!-- Details Action -->
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top border-secondary mt-auto">
+                        <span class="text-secondary small">Movie ID: {{ movie1.movie_id }}</span>
+                        <a href="{{ url_for('movie_detail', movie_id=movie1.movie_id) }}" class="btn btn-danger btn-sm px-3">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> View Movie Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Movie 2 Card (Blue Corner) -->
+        <div class="col-lg-6">
+            <div class="card h-100 bg-secondary bg-opacity-10 border-info border-2 overflow-hidden shadow-lg">
+                <div class="card-header bg-info bg-opacity-10 border-info d-flex justify-content-between align-items-center py-3">
+                    <span class="fw-bold text-info"><i class="bi bi-2-circle-fill me-1"></i> CORNER BLUE</span>
+                    <span class="badge bg-info text-dark">{{ movie2.release_date[:4] if movie2.release_date else 'N/A' }}</span>
+                </div>
+
+                <div class="p-3">
+                    <div class="compare-poster-container mb-3">
+                        <img src="{{ movie2.poster_url }}" alt="{{ movie2.title }} Poster" class="compare-poster-img">
+                    </div>
+
+                    <h3 class="fw-bold text-white mb-2">{{ movie2.title }}</h3>
+
+                    <!-- Genres with Common Genres Highlighted -->
+                    <div class="mb-3">
+                        <div class="small text-secondary mb-1">Genres:</div>
+                        {% for g in movie2.genres %}
+                            {% if g in comparison.common_genres %}
+                                <span class="badge bg-warning text-dark me-1 mb-1 border border-light">
+                                    <i class="bi bi-check-circle-fill"></i> {{ g }} (Shared)
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary me-1 mb-1">{{ g }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <!-- Overview -->
+                    <div class="mb-4">
+                        <h6 class="text-light fw-bold mb-1">Storyline Overview</h6>
+                        <p class="text-secondary small leading-relaxed">{{ movie2.overview }}</p>
+                    </div>
+
+                    <!-- Details Action -->
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top border-secondary mt-auto">
+                        <span class="text-secondary small">Movie ID: {{ movie2.movie_id }}</span>
+                        <a href="{{ url_for('movie_detail', movie_id=movie2.movie_id) }}" class="btn btn-info btn-sm px-3 text-dark fw-bold">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> View Movie Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const swapBtn = document.getElementById("swapBtn");
+    const m1Input = document.getElementById("movie1Input");
+    const m2Input = document.getElementById("movie2Input");
+    const form = document.getElementById("compareForm");
+
+    if (swapBtn && m1Input && m2Input && form) {
+        swapBtn.addEventListener("click", function() {
+            const temp = m1Input.value;
+            m1Input.value = m2Input.value;
+            m2Input.value = temp;
+            if (m1Input.value && m2Input.value) {
+                form.submit();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

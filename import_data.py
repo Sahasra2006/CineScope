@@ -19,7 +19,7 @@ movie_validator = {
         "required": ["movie_id", "title", "genres"],
         "properties": {
             "movie_id": {
-                "bsonType": "int",
+                "bsonType": ["int", "long"],
                 "description": "movie_id must be an integer and is required"
             },
             "title": {
@@ -47,7 +47,7 @@ movie_validator = {
                 "description": "vote_average must be a numeric value"
             },
             "vote_count": {
-                "bsonType": "int",
+                "bsonType": ["int", "long"],
                 "description": "vote_count must be an integer"
             },
             "popularity": {
@@ -69,7 +69,7 @@ rating_validator = {
                 "description": "user_id must be a string and is required"
             },
             "movie_id": {
-                "bsonType": "int",
+                "bsonType": ["int", "long"],
                 "description": "movie_id must be an integer and is required"
             },
             "rating": {
@@ -97,7 +97,7 @@ watchlist_validator = {
                 "description": "user_id must be a string and is required"
             },
             "movie_id": {
-                "bsonType": "int",
+                "bsonType": ["int", "long"],
                 "description": "movie_id must be an integer and is required"
             },
             "status": {
@@ -158,18 +158,33 @@ def import_movies(db, file_path=CLEAN_DATA_PATH):
     for _, row in df.iterrows():
         try:
             genres_arr = json.loads(row["genres_clean"])
+            if not isinstance(genres_arr, list) or not genres_arr:
+                genres_arr = ["Unknown"]
+            else:
+                genres_arr = [str(g).strip() for g in genres_arr if str(g).strip()]
+                if not genres_arr:
+                    genres_arr = ["Unknown"]
         except Exception:
             genres_arr = ["Unknown"]
 
+        raw_overview = row.get("overview")
+        overview = str(raw_overview).strip() if pd.notna(raw_overview) and str(raw_overview).strip().lower() != "nan" else "No overview available."
+
+        raw_date = row.get("release_date")
+        release_date = str(raw_date).strip() if pd.notna(raw_date) and str(raw_date).strip().lower() != "nan" else "N/A"
+
+        raw_title = row.get("title")
+        title = str(raw_title).strip() if pd.notna(raw_title) and str(raw_title).strip().lower() != "nan" else "Untitled"
+
         records.append({
             "movie_id": int(row["id"]),
-            "title": str(row["title"]),
+            "title": title,
             "genres": genres_arr,
-            "overview": str(row["overview"]),
-            "release_date": str(row["release_date"]),
-            "vote_average": float(row["vote_average"]),
-            "vote_count": int(row["vote_count"]),
-            "popularity": float(row["popularity"])
+            "overview": overview,
+            "release_date": release_date,
+            "vote_average": float(row["vote_average"]) if pd.notna(row.get("vote_average")) else 0.0,
+            "vote_count": int(row["vote_count"]) if pd.notna(row.get("vote_count")) else 0,
+            "popularity": float(row["popularity"]) if pd.notna(row.get("popularity")) else 0.0
         })
 
     from pymongo import UpdateOne

@@ -14,10 +14,13 @@ def create_content_soup(row):
     import json
     try:
         genres = json.loads(row["genres_clean"])
-        genre_str = " ".join(genres * 2)
+        if isinstance(genres, list):
+            genre_str = " ".join([str(g).strip() for g in genres if str(g).strip()] * 2)
+        else:
+            genre_str = ""
     except Exception:
         genre_str = ""
-    overview = str(row["overview"]) if pd.notna(row["overview"]) else ""
+    overview = str(row["overview"]).strip() if pd.notna(row.get("overview")) and str(row.get("overview")).strip().lower() != "nan" else ""
     return f"{genre_str} {overview}".strip()
 
 def build_recommender(csv_path=CLEAN_DATA_PATH):
@@ -60,7 +63,8 @@ def evaluate_recs(movie_title, meta_df, cosine_sim, top_k=5):
     for rank, i in enumerate(top_indices, start=1):
         rec_title = meta_df.iloc[i]["title"]
         rec_id = int(meta_df.iloc[i]["id"])
-        score = [s for j, s in sim_scores if j == i][0]
+        score_matches = [s for j, s in sim_scores if j == i]
+        score = score_matches[0] if score_matches else 0.0
         recs.append({"rank": rank, "id": rec_id, "title": rec_title, "score": round(float(score), 4)})
         print(f" {rank}. {rec_title} (ID: {rec_id}) - Similarity Score: {score:.4f}")
     return recs
